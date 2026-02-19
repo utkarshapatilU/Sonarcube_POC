@@ -32,36 +32,37 @@ pipeline {
         }
 
         stage('Sonar Scan (Docker)') {
-            steps {
-                withCredentials([string(credentialsId: 'SONAR_AUTH_TOKEN', variable: 'TOKEN')]) {
-                    script {
-                        if (isUnix()) {
-                            sh """
-                            docker run --rm \\
-                              -v "\$PWD":/usr/src \\
-                              -e SONAR_HOST_URL="\$SONAR_HOST" \\
-                              -e SONAR_TOKEN="\$TOKEN" \\
-                              sonarsource/sonar-scanner-cli \\
-                              -Dsonar.projectKey=\$JOB_NAME \\
-                              -Dsonar.projectName=\$JOB_NAME \\
-                              -Dsonar.sources=.
-                            """
-                        } else {
-                            bat """
-                            docker run --rm ^
-                              -v "%cd%":/usr/src ^
-                              -e SONAR_HOST_URL="%SONAR_HOST%" ^
-                              -e SONAR_TOKEN="%TOKEN%" ^
-                              sonarsource/sonar-scanner-cli ^
-                              -Dsonar.projectKey=%JOB_NAME% ^
-                              -Dsonar.projectName=%JOB_NAME% ^
-                              -Dsonar.sources=.
-                            """
-                        }
-                    }
+    steps {
+        withCredentials([string(credentialsId: 'SONAR_AUTH_TOKEN', variable: 'TOKEN')]) {
+            script {
+                if (isUnix()) {
+                    sh """
+                    docker run --rm \\
+                      -v "\$PWD":/usr/src \\
+                      -e SONAR_HOST_URL="\$SONAR_HOST" \\
+                      -e SONAR_TOKEN="\$TOKEN" \\
+                      sonarsource/sonar-scanner-cli \\
+                      -Dsonar.projectKey=java-poc-pipeline \\
+                      -Dsonar.projectName=java-poc-pipeline \\
+                      -Dsonar.sources=.
+                    """
+                } else {
+                    bat """
+                    docker run --rm ^
+                      -v "%cd%":/usr/src ^
+                      -e SONAR_HOST_URL="%SONAR_HOST%" ^
+                      -e SONAR_TOKEN="%TOKEN%" ^
+                      sonarsource/sonar-scanner-cli ^
+                      -Dsonar.projectKey=java-poc-pipeline ^
+                      -Dsonar.projectName=java-poc-pipeline ^
+                      -Dsonar.sources=.
+                    """
                 }
             }
         }
+    }
+}
+
 
         stage('Quality Gate') {
             steps {
