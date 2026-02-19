@@ -4,13 +4,14 @@ pipeline {
     environment {
         SONAR_ENV  = "SonarQube" 
         SONAR_HOST = "http://192.168.0.193:9000"  
+        BRANCH_NAME = "${env.BRANCH_NAME}"
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                git branch: 'feature-utkarsha',
+                git branch: 'main',
                     credentialsId: 'github-token',
                     url: 'https://github.com/utkarshapatilU/Sonarcube_POC.git'
             }
