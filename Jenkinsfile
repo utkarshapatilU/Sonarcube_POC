@@ -17,19 +17,15 @@ pipeline {
             }
         }
 
-        stage('Build') {
-            steps {
-                withMaven(maven: 'Maven 3.9.4') {
-                script {
-                    if (isUnix()) {
-                        sh 'mvn clean compile'
-                    } else {
-                        bat 'mvn clean compile'
-                    }
-                }
+        stage('Build & Sonar') {
+    steps {
+        withMaven(maven: 'Maven 3.9.4') {
+            withSonarQubeEnv('SonarQube') { 
+                bat 'mvn clean verify sonar:sonar -Dsonar.projectKey=java-poc-pipeline'
             }
         }
-        }
+    }
+}
 
         stage('Sonar Scan (Docker)') {
     steps {
