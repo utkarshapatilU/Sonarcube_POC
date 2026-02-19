@@ -10,7 +10,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://gitlab.com/your-user/java-poc.git'
+                git branch: 'feature-utkarsha', url: 'https://github.com/utkarshapatilU/Sonarcube_POC.git'
             }
         }
 
