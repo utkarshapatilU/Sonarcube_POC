@@ -31,37 +31,19 @@ pipeline {
         }
         }
 
-        stage('Sonar Scan (Docker)') {
-    steps {
-        withCredentials([string(credentialsId: 'SONAR_AUTH_TOKEN', variable: 'TOKEN')]) {
-            script {
-                if (isUnix()) {
-                    sh """
-                    docker run --rm \\
-                      -v "\$PWD":/usr/src \\
-                      -e SONAR_HOST_URL="\$SONAR_HOST" \\
-                      -e SONAR_TOKEN="\$TOKEN" \\
-                      sonarsource/sonar-scanner-cli \\
-                      -Dsonar.projectKey=java-poc-pipeline \\
-                      -Dsonar.projectName=java-poc-pipeline \\
-                      -Dsonar.sources=.
-                    """
-                } else {
-                    bat """
-                    docker run --rm ^
-                      -v "%cd%":/usr/src ^
-                      -e SONAR_HOST_URL="%SONAR_HOST%" ^
-                      -e SONAR_TOKEN="%TOKEN%" ^
-                      sonarsource/sonar-scanner-cli ^
-                      -Dsonar.projectKey=java-poc-pipeline ^
-                      -Dsonar.projectName=java-poc-pipeline ^
-                      -Dsonar.sources=.
-                    """
+        stage('Sonar Scan') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    script {
+                        if (isUnix()) {
+                            sh 'mvn clean verify sonar:sonar -Dsonar.projectKey=java-poc-pipeline'
+                        } else {
+                            bat 'mvn clean verify sonar:sonar -Dsonar.projectKey=java-poc-pipeline'
+                        }
+                    }
                 }
             }
         }
-    }
-}
 
 
         stage('Quality Gate') {
