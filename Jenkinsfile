@@ -71,16 +71,19 @@ stage('Send Reports') {
     steps {
         withCredentials([string(credentialsId: 'SONAR_AUTH_TOKEN', variable: 'SONAR_TOKEN')]) {
             script {
+               
                 bat """
                 curl -s -u %SONAR_TOKEN%: ^
                 "http://192.168.0.193:9000/api/measures/component?componentKey=java-poc-pipeline&metricKeys=bugs,vulnerabilities,code_smells" ^
                 -o sonar-report.json
                 """
+                
                 echo "Saved Sonar report: sonar-report.json"
             }
         }
     }
 }
+
 
 
 
