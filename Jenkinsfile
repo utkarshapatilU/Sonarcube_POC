@@ -73,7 +73,7 @@ stage('Send Reports') {
             script {
 
            def response = bat(
-    script: """curl -s -u %SONAR_TOKEN%: "http://192.168.0.193:9000/api/measures/component?componentKey=java-poc-pipeline&metricKeys=bugs,vulnerabilities,code_smells" > sonar-report.json""",
+   curl -s -u <TOKEN>: "http://192.168.0.193:9000/api/measures/component?componentKey=java-poc-pipeline&metricKeys=bugs,vulnerabilities,code_smells" -o sonar-report.json,
     returnStdout: true
 )
 
