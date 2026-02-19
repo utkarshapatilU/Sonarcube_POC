@@ -18,6 +18,7 @@ pipeline {
 
         stage('Build') {
             steps {
+                withMaven(maven: 'Maven 3.9.4') {
                 script {
                     if (isUnix()) {
                         sh 'mvn clean compile'
@@ -26,6 +27,7 @@ pipeline {
                     }
                 }
             }
+        }
         }
 
         stage('Sonar Scan (Docker)') {
