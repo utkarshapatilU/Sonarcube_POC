@@ -2,35 +2,60 @@ pipeline {
     agent any
 
     environment {
-        SONAR_HOST = "http://localhost:9000"
-        SONAR_ENV  = "SonarQube"
+        SONAR_ENV  = "SonarQube" 
+        SONAR_HOST = "http://192.168.0.193:9000"  
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                git branch: 'feature-utkarsha', url: 'https://github.com/utkarshapatilU/Sonarcube_POC.git'
+                git branch: 'feature-utkarsha',
+                    credentialsId: 'github-token',
+                    url: 'https://github.com/utkarshapatilU/Sonarcube_POC.git'
             }
         }
 
         stage('Build') {
             steps {
-                sh 'mvn clean compile'
+                script {
+                    if (isUnix()) {
+                        sh 'mvn clean compile'
+                    } else {
+                        bat 'mvn clean compile'
+                    }
+                }
             }
         }
 
-        stage('Sonar Scan') {
+        stage('Sonar Scan (Docker)') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh '''
-                    sonar-scanner \
-                    -Dsonar.projectKey=${JOB_NAME} \
-                    -Dsonar.projectName=${JOB_NAME} \
-                    -Dsonar.sources=. \
-                    -Dsonar.host.url=http://localhost:9000 \
-                    -Dsonar.login=$SONAR_AUTH_TOKEN
-                    '''
+                withCredentials([string(credentialsId: 'SONAR_AUTH_TOKEN', variable: 'TOKEN')]) {
+                    script {
+                        if (isUnix()) {
+                            sh """
+                            docker run --rm \\
+                              -v "\$PWD":/usr/src \\
+                              -e SONAR_HOST_URL="\$SONAR_HOST" \\
+                              -e SONAR_TOKEN="\$TOKEN" \\
+                              sonarsource/sonar-scanner-cli \\
+                              -Dsonar.projectKey=\$JOB_NAME \\
+                              -Dsonar.projectName=\$JOB_NAME \\
+                              -Dsonar.sources=.
+                            """
+                        } else {
+                            bat """
+                            docker run --rm ^
+                              -v "%cd%":/usr/src ^
+                              -e SONAR_HOST_URL="%SONAR_HOST%" ^
+                              -e SONAR_TOKEN="%TOKEN%" ^
+                              sonarsource/sonar-scanner-cli ^
+                              -Dsonar.projectKey=%JOB_NAME% ^
+                              -Dsonar.projectName=%JOB_NAME% ^
+                              -Dsonar.sources=.
+                            """
+                        }
+                    }
                 }
             }
         }
@@ -46,10 +71,10 @@ pipeline {
 
     post {
         success {
-            echo "Scan Success for user: ${env.BUILD_USER}"
+            echo "Scan Success for build: ${env.BUILD_NUMBER}"
         }
         failure {
-            echo "Scan Failed for user: ${env.BUILD_USER}"
+            echo "Scan Failed for build: ${env.BUILD_NUMBER}"
         }
     }
 }
