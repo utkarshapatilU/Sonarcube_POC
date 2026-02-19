@@ -67,19 +67,21 @@ pipeline {
             }
         }
 
-       
-        stage('Send Reports') {
-            steps {
-                script {
-                    def response = bat(
-                        script: """curl -s -u ${SONAR_TOKEN}: "http://192.168.0.193:9000/api/measures/component?componentKey=java-poc-pipeline&metricKeys=bugs,vulnerabilities,code_smells" """,
-                        returnStdout: true
-                    )
-                    writeFile file: 'sonar-report.json', text: response
-                    echo "Saved Sonar report: sonar-report.json"
-                }
+stage('Send Reports') {
+    steps {
+        withCredentials([string(credentialsId: 'SONAR_AUTH_TOKEN', variable: 'SONAR_TOKEN')]) {
+            script {
+                def response = bat(
+                    script: """curl -s -u %SONAR_TOKEN%: "http://192.168.0.193:9000/api/measures/component?componentKey=java-poc-pipeline&metricKeys=bugs,vulnerabilities,code_smells" """,
+                    returnStdout: true
+                )
+                writeFile file: 'sonar-report.json', text: response
+                echo "Saved Sonar report: sonar-report.json"
             }
         }
+    }
+}
+
 
     } 
 
