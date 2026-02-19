@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         SONAR_ENV  = "SonarQube" 
-        SONAR_HOST = "http://192.168.0.193:9000"  
+        SONAR_HOST = "http://10.104.224.85:9000"  
         BRANCH_NAME = "${env.BRANCH_NAME}"
     }
 
