@@ -66,28 +66,21 @@ pipeline {
                 }
             }
         }
-        
-stage('SonarQube Analysis & Report') {
+
+stage('Send Reports') {
     steps {
         withCredentials([string(credentialsId: 'SONAR_AUTH_TOKEN', variable: 'SONAR_TOKEN')]) {
-            withSonarQubeEnv('SonarQube') { 
-              
-                bat "mvn clean verify sonar:sonar -Dsonar.projectKey=java-poc-pipeline -Dsonar.login=%SONAR_TOKEN%"
-                sleep 10
-                script {
-                    def sonarApiUrl = "http://localhost:9000/api/measures/component?componentKey=java-poc-pipeline&metricKeys=bugs,vulnerabilities,code_smells"
-                    bat "curl -u %SONAR_TOKEN%: \"${sonarApiUrl}\" -o sonar-report.json"
-                }
-
-                echo "Sonar report saved as sonar-report.json"
+            script {
+                def response = bat(
+                    script: """curl -s -u %SONAR_TOKEN%: "http://192.168.0.193:9000/api/measures/component?componentKey=java-poc-pipeline&metricKeys=bugs,vulnerabilities,code_smells" """,
+                    returnStdout: true
+                )
+                writeFile file: 'sonar-report.json', text: response
+                echo "Saved Sonar report: sonar-report.json"
             }
         }
     }
 }
-
-
-
-
 
 
     } 
