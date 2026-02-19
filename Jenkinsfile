@@ -72,7 +72,7 @@ stage('Send Reports') {
         withCredentials([string(credentialsId: 'SONAR_AUTH_TOKEN', variable: 'SONAR_TOKEN')]) {
             script {
                 def response = bat(
-                    script: """curl -s -u %SONAR_TOKEN%: "http://192.168.0.193:9000/api/measures/component?componentKey=java-poc-pipeline&metricKeys=bugs,vulnerabilities,code_smells" """,
+                    script: """curl -s -u %SONAR_TOKEN%: "http://10.104.224.85:9000/api/measures/component?componentKey=java-poc-pipeline&metricKeys=bugs,vulnerabilities,code_smells" """,
                     returnStdout: true
                 )
                 writeFile file: 'sonar-report.json', text: response
