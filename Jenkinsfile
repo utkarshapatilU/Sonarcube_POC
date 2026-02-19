@@ -69,6 +69,20 @@ pipeline {
         }
     }
 
+
+    stage('Send Reports') {
+    steps {
+        script {
+            
+            def response = sh(script: "curl -s -u ${SONAR_TOKEN}: 'http://192.168.0.193:9000/api/measures/component?componentKey=java-poc-pipeline&metricKeys=bugs,vulnerabilities,code_smells'", returnStdout: true)
+            writeFile file: 'sonar-report.json', text: response
+
+            echo "Saved Sonar report: sonar-report.json"
+        }
+    }
+}
+
+
     post {
         success {
             echo "Scan Success for build: ${env.BUILD_NUMBER}"
