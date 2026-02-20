@@ -25,7 +25,7 @@ pipeline {
         stage('SonarQube Code Analysis') {
             steps {
                 script {
-                    def branchName = env.BRANCH_NAME ?: "main"
+                    def branchName = env.BRANCH_NAME ?: "feature-utkarsha"
                     def sanitizedBranch = branchName.replaceAll("[^a-zA-Z0-9-_]", "_")
                     def dynamicProjectKey = "${BASE_PROJECT_KEY}-${sanitizedBranch}"
 
