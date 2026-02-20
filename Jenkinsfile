@@ -52,15 +52,15 @@ pipeline {
         script {
             def scannerHome = tool 'SonarScanner'
             withSonarQubeEnv('SonarQube') {
-                sh """
-                ${scannerHome}/bin/sonar-scanner \
-                  -Dsonar.projectKey=java-poc-pipeline \
-                  -Dsonar.projectName=java-poc-pipeline \
-                  -Dsonar.sources=. \
-                  -Dsonar.java.binaries=target/classes \
-                  -Dsonar.host.url=http://172.25.96.1:9000 \
-                  -Dsonar.branch.name=feature-utkarsha \
-                  -Dsonar.token=$SONAR_AUTH_TOKEN
+                bat """
+                "${scannerHome}\\bin\\sonar-scanner.bat" ^
+                  -Dsonar.projectKey=java-poc-pipeline ^
+                  -Dsonar.projectName=java-poc-pipeline ^
+                  -Dsonar.sources=. ^
+                  -Dsonar.java.binaries=target/classes ^
+                  -Dsonar.host.url=http://172.25.96.1:9000 ^
+                  -Dsonar.branch.name=feature-utkarsha ^
+                  -Dsonar.token=%SONAR_AUTH_TOKEN%
                 """
             }
         }
