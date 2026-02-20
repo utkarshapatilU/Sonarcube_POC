@@ -23,36 +23,31 @@ pipeline {
         }
 
         stage('SonarQube Code Analysis') {
-            steps {
-                script {
+    steps {
+        script {
 
-                    // Automatically get branch name
-                    def branchName = env.BRANCH_NAME ?: "main"
+            def branchName = env.BRANCH_NAME ?: "main"
+            def sanitizedBranch = branchName.replaceAll("[^a-zA-Z0-9-_]", "_")
+            def dynamicProjectKey = "${BASE_PROJECT_KEY}-${sanitizedBranch}"
 
-                    // Clean branch name (replace special chars)
-                    def sanitizedBranch = branchName.replaceAll("[^a-zA-Z0-9-_]", "_")
+            echo "Running Sonar scan for branch: ${branchName}"
+            echo "Dynamic Project Key: ${dynamicProjectKey}"
 
-                    // Create dynamic project key
-                    def dynamicProjectKey = "${BASE_PROJECT_KEY}-${sanitizedBranch}"
+            def scannerHome = tool 'SonarScanner'
 
-                    echo "Running Sonar scan for branch: ${branchName}"
-                    echo "Dynamic Project Key: ${dynamicProjectKey}"
-
-                    def scannerHome = tool 'SonarScanner'
-
-                    withSonarQubeEnv('SonarQube') {
-                        bat """
-                        "${scannerHome}\\bin\\sonar-scanner.bat" ^
-                          -Dsonar.projectKey=${dynamicProjectKey} ^
-                          -Dsonar.projectName=${dynamicProjectKey} ^
-                          -Dsonar.sources=. ^
-                          -Dsonar.java.binaries=target/classes ^
-                          -Dsonar.host.url=${SONAR_HOST}
-                        """
-                    }
-                }
+            withSonarQubeEnv('SonarQube') {
+                bat """
+                "${scannerHome}\\bin\\sonar-scanner.bat" ^
+                  -Dsonar.projectKey=${dynamicProjectKey} ^
+                  -Dsonar.projectName=${dynamicProjectKey} ^
+                  -Dsonar.sources=. ^
+                  -Dsonar.java.binaries=target/classes ^
+                  -Dsonar.host.url=${SONAR_HOST}
+                """
             }
         }
+    }
+}
 
         stage('Quality Gate') {
             steps {
