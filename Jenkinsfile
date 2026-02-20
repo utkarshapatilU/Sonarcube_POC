@@ -25,31 +25,22 @@ pipeline {
         stage('SonarQube Code Analysis') {
             steps {
                 script {
-                    // Detect branch name - works for both multibranch and regular pipelines
-                    // env.BRANCH_NAME is automatically set in multibranch pipelines
-                    // env.GIT_BRANCH is set when using Git plugin
-                    def branchName = env.BRANCH_NAME ?: env.GIT_BRANCH
-                    
-                    // Remove 'origin/' prefix if present (common in GIT_BRANCH)
+                    // Detect branch name for logging purposes
+                    def branchName = env.BRANCH_NAME ?: env.GIT_BRANCH ?: 'unknown'
                     if (branchName) {
                         branchName = branchName.replaceAll('origin/', '').replaceAll('refs/heads/', '')
                     }
                     
-                    // Fallback to 'main' if still empty or HEAD
-                    if (!branchName || branchName == 'HEAD' || branchName.isEmpty()) {
-                        branchName = 'main'
-                    }
-                    
-                    def sanitizedBranch = branchName.replaceAll("[^a-zA-Z0-9-_]", "_")
-                    def dynamicProjectKey = "${BASE_PROJECT_KEY}-${sanitizedBranch}"
+                    // Use single project key for all branches
+                    def projectKey = BASE_PROJECT_KEY
+                    def projectName = "${BASE_PROJECT_KEY} (Branch: ${branchName})"
 
                     echo "=========================================="
-                    echo "Branch Detection:"
-                    echo "  - BRANCH_NAME env var: ${env.BRANCH_NAME ?: 'NOT SET'}"
-                    echo "  - GIT_BRANCH env var: ${env.GIT_BRANCH ?: 'NOT SET'}"
-                    echo "  - Detected branch: ${branchName}"
-                    echo "  - Sanitized branch: ${sanitizedBranch}"
-                    echo "  - SonarQube Project Key: ${dynamicProjectKey}"
+                    echo "SonarQube Analysis:"
+                    echo "  - Current branch: ${branchName}"
+                    echo "  - Project Key: ${projectKey}"
+                    echo "  - Project Name: ${projectName}"
+                    echo "  - Note: All branches will update the same project"
                     echo "=========================================="
 
                     // Verify that target/classes exists before running SonarQube
@@ -65,9 +56,8 @@ pipeline {
                     withSonarQubeEnv('SonarQube') {
                         bat """
                         "${scannerHome}\\bin\\sonar-scanner.bat" ^
-                          -Dsonar.projectKey=${dynamicProjectKey} ^
-                          -Dsonar.projectName=${dynamicProjectKey} ^
-                          -Dsonar.branch.name=${branchName} ^
+                          -Dsonar.projectKey=${projectKey} ^
+                          -Dsonar.projectName=${projectName} ^
                           -Dsonar.sources=java-poc/src/main/java ^
                           -Dsonar.java.binaries=target/classes ^
                           -Dsonar.host.url=${SONAR_HOST}
