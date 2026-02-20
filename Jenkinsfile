@@ -22,28 +22,16 @@ pipeline {
             }
         }
 
-        stage('SonarQube Code Analysis') {
+        stage('SonarQube Analysis') {
             steps {
                 script {
-                    // Detect branch name for logging purposes
+                    // Get branch name for logging
                     def branchName = env.BRANCH_NAME ?: env.GIT_BRANCH ?: 'unknown'
-                    if (branchName) {
-                        branchName = branchName.replaceAll('origin/', '').replaceAll('refs/heads/', '')
-                    }
+                    branchName = branchName.replaceAll('origin/', '').replaceAll('refs/heads/', '')
                     
-                    // Use single project key for all branches
-                    def projectKey = BASE_PROJECT_KEY
-                    def projectName = BASE_PROJECT_KEY
+                    echo "Running SonarQube analysis on branch: ${branchName}"
 
-                    echo "=========================================="
-                    echo "SonarQube Analysis:"
-                    echo "  - Current branch: ${branchName}"
-                    echo "  - Project Key: ${projectKey}"
-                    echo "  - Project Name: ${projectName}"
-                    echo "  - Note: All branches will update the same project"
-                    echo "=========================================="
-
-                    // Verify that target/classes exists before running SonarQube
+                    // Verify compiled classes exist
                     bat '''
                         if not exist "target\\classes" (
                             echo ERROR: target\\classes directory does not exist. Build may have failed.
@@ -56,8 +44,8 @@ pipeline {
                     withSonarQubeEnv('SonarQube') {
                         bat """
                         "${scannerHome}\\bin\\sonar-scanner.bat" ^
-                          -Dsonar.projectKey="${projectKey}" ^
-                          -Dsonar.projectName="${projectName}" ^
+                          -Dsonar.projectKey="${BASE_PROJECT_KEY}" ^
+                          -Dsonar.projectName="${BASE_PROJECT_KEY}" ^
                           -Dsonar.sources=java-poc/src/main/java ^
                           -Dsonar.java.binaries=target/classes ^
                           -Dsonar.host.url=${SONAR_HOST}
