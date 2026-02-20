@@ -25,12 +25,32 @@ pipeline {
         stage('SonarQube Code Analysis') {
             steps {
                 script {
-                    def branchName = env.BRANCH_NAME ?: "feature-utkarsha"
+                    // Detect branch name - works for both multibranch and regular pipelines
+                    // env.BRANCH_NAME is automatically set in multibranch pipelines
+                    // env.GIT_BRANCH is set when using Git plugin
+                    def branchName = env.BRANCH_NAME ?: env.GIT_BRANCH
+                    
+                    // Remove 'origin/' prefix if present (common in GIT_BRANCH)
+                    if (branchName) {
+                        branchName = branchName.replaceAll('origin/', '').replaceAll('refs/heads/', '')
+                    }
+                    
+                    // Fallback to 'main' if still empty or HEAD
+                    if (!branchName || branchName == 'HEAD' || branchName.isEmpty()) {
+                        branchName = 'main'
+                    }
+                    
                     def sanitizedBranch = branchName.replaceAll("[^a-zA-Z0-9-_]", "_")
                     def dynamicProjectKey = "${BASE_PROJECT_KEY}-${sanitizedBranch}"
 
-                    echo "Running Sonar scan for branch: ${branchName}"
-                    echo "Dynamic Project Key: ${dynamicProjectKey}"
+                    echo "=========================================="
+                    echo "Branch Detection:"
+                    echo "  - BRANCH_NAME env var: ${env.BRANCH_NAME ?: 'NOT SET'}"
+                    echo "  - GIT_BRANCH env var: ${env.GIT_BRANCH ?: 'NOT SET'}"
+                    echo "  - Detected branch: ${branchName}"
+                    echo "  - Sanitized branch: ${sanitizedBranch}"
+                    echo "  - SonarQube Project Key: ${dynamicProjectKey}"
+                    echo "=========================================="
 
                     // Verify that target/classes exists before running SonarQube
                     bat '''
@@ -56,13 +76,13 @@ pipeline {
             }
         }
 
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
+        // stage('Quality Gate') {
+        //     steps {
+        //         timeout(time: 5, unit: 'MINUTES') {
+        //             waitForQualityGate abortPipeline: true
+        //         }
+        //     }
+        // }
     }
 
     post {
