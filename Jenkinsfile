@@ -67,6 +67,7 @@ pipeline {
                         "${scannerHome}\\bin\\sonar-scanner.bat" ^
                           -Dsonar.projectKey=${dynamicProjectKey} ^
                           -Dsonar.projectName=${dynamicProjectKey} ^
+                          -Dsonar.branch.name=${branchName} ^
                           -Dsonar.sources=java-poc/src/main/java ^
                           -Dsonar.java.binaries=target/classes ^
                           -Dsonar.host.url=${SONAR_HOST}
