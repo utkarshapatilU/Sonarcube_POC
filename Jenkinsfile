@@ -17,37 +17,44 @@ pipeline {
         stage('Build') {
             steps {
                 withMaven(maven: 'Maven 3.9.4') {
-                    bat 'mvn clean install -DskipTests'
+                    bat 'mvn clean compile'
                 }
             }
         }
 
         stage('SonarQube Code Analysis') {
-    steps {
-        script {
+            steps {
+                script {
+                    def branchName = env.BRANCH_NAME ?: "main"
+                    def sanitizedBranch = branchName.replaceAll("[^a-zA-Z0-9-_]", "_")
+                    def dynamicProjectKey = "${BASE_PROJECT_KEY}-${sanitizedBranch}"
 
-            def branchName = env.BRANCH_NAME ?: "main"
-            def sanitizedBranch = branchName.replaceAll("[^a-zA-Z0-9-_]", "_")
-            def dynamicProjectKey = "${BASE_PROJECT_KEY}-${sanitizedBranch}"
+                    echo "Running Sonar scan for branch: ${branchName}"
+                    echo "Dynamic Project Key: ${dynamicProjectKey}"
 
-            echo "Running Sonar scan for branch: ${branchName}"
-            echo "Dynamic Project Key: ${dynamicProjectKey}"
+                    // Verify that target/classes exists before running SonarQube
+                    bat '''
+                        if not exist "target\\classes" (
+                            echo ERROR: target\\classes directory does not exist. Build may have failed.
+                            exit /b 1
+                        )
+                    '''
 
-            def scannerHome = tool 'SonarScanner'
+                    def scannerHome = tool 'SonarScanner'
 
-            withSonarQubeEnv('SonarQube') {
-                bat """
-                "${scannerHome}\\bin\\sonar-scanner.bat" ^
-                  -Dsonar.projectKey=${dynamicProjectKey} ^
-                  -Dsonar.projectName=${dynamicProjectKey} ^
-                  -Dsonar.sources=. ^
-                  -Dsonar.java.binaries=target/classes ^
-                  -Dsonar.host.url=${SONAR_HOST}
-                """
+                    withSonarQubeEnv('SonarQube') {
+                        bat """
+                        "${scannerHome}\\bin\\sonar-scanner.bat" ^
+                          -Dsonar.projectKey=${dynamicProjectKey} ^
+                          -Dsonar.projectName=${dynamicProjectKey} ^
+                          -Dsonar.sources=java-poc/src/main/java ^
+                          -Dsonar.java.binaries=target/classes ^
+                          -Dsonar.host.url=${SONAR_HOST}
+                        """
+                    }
+                }
             }
         }
-    }
-}
 
         stage('Quality Gate') {
             steps {
