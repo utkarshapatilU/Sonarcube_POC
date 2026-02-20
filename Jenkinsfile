@@ -2,21 +2,15 @@ pipeline {
     agent any
 
     environment {
-        SONAR_HOST = "http://172.25.96.1:9000"
-        PROJECT_KEY = "java-poc-pipeline"
+        SONAR_HOST = "http://10.104.224.85:9000"
+        BASE_PROJECT_KEY = "java-poc-pipeline"
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                checkout scmGit(
-                    branches: [[name: 'feature-utkarsha']],
-                    userRemoteConfigs: [[
-                        credentialsId: 'github-token',
-                        url: 'https://github.com/utkarshapatilU/Sonarcube_POC.git'
-                    ]]
-                )
+                checkout scm
             }
         }
 
@@ -28,74 +22,54 @@ pipeline {
             }
         }
 
-        // stage('Sonar Scan (Docker)') {
-        //     steps {
-        //         withCredentials([string(credentialsId: 'SONAR_AUTH_TOKEN', variable: 'SONAR_TOKEN')]) {
-        //             bat """
-        //             docker run --rm ^
-        //               -v "%cd%":/usr/src ^
-        //               -e SONAR_HOST_URL="%SONAR_HOST%" ^
-        //               -e SONAR_TOKEN="%SONAR_TOKEN%" ^
-        //               sonarsource/sonar-scanner-cli ^
-        //               -Dsonar.projectKey=%PROJECT_KEY% ^
-        //               -Dsonar.projectName=%PROJECT_KEY% ^
-        //               -Dsonar.sources=. ^
-        //               -Dsonar.java.binaries=target/classes ^
-        //               -Dsonar.branch.name=feature-utkarsha
-        //             """
-        //         }
-        //     }
-        // }
-
-    stage('SonarQube Code Analysis') {
-    steps {
-        script {
-            def scannerHome = tool 'SonarScanner'
-            withSonarQubeEnv('SonarQube') {
-                bat """
-                "${scannerHome}\\bin\\sonar-scanner.bat" ^
-                  -Dsonar.projectKey=java-poc-pipeline ^
-                  -Dsonar.projectName=java-poc-pipeline ^
-                  -Dsonar.sources=. ^
-                  -Dsonar.java.binaries=target/classes ^
-                  -Dsonar.host.url=http://172.25.96.1:9000 ^
-                  -Dsonar.branch.name=feature-utkarsha ^
-                  -Dsonar.token=%SONAR_AUTH_TOKEN%
-                """
-            }
-        }
-    }
-}
-
-
-        stage('Quality Gate') {
+        stage('SonarQube Code Analysis') {
             steps {
-                timeout(time: 2, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+                script {
+
+                    // Automatically get branch name
+                    def branchName = env.BRANCH_NAME ?: "main"
+
+                    // Clean branch name (replace special chars)
+                    def sanitizedBranch = branchName.replaceAll("[^a-zA-Z0-9-_]", "_")
+
+                    // Create dynamic project key
+                    def dynamicProjectKey = "${BASE_PROJECT_KEY}-${sanitizedBranch}"
+
+                    echo "Running Sonar scan for branch: ${branchName}"
+                    echo "Dynamic Project Key: ${dynamicProjectKey}"
+
+                    def scannerHome = tool 'SonarScanner'
+
+                    withSonarQubeEnv('SonarQube') {
+                        bat """
+                        "${scannerHome}\\bin\\sonar-scanner.bat" ^
+                          -Dsonar.projectKey=${dynamicProjectKey} ^
+                          -Dsonar.projectName=${dynamicProjectKey} ^
+                          -Dsonar.sources=. ^
+                          -Dsonar.java.binaries=target/classes ^
+                          -Dsonar.host.url=${SONAR_HOST}
+                        """
+                    }
                 }
             }
         }
 
-        // stage('Send Reports') {
-        //     steps {
-        //         withCredentials([string(credentialsId: 'SONAR_AUTH_TOKEN', variable: 'SONAR_TOKEN')]) {
-        //             bat """
-        //             curl -s -u %SONAR_TOKEN%: ^
-        //             "http://192.168.0.62:9000/api/measures/component?component=java-poc-pipeline&metricKeys=bugs,vulnerabilities,code_smells" ^
-        //             -o sonar-report.json
-        //             """
-        //         }
-        //         echo "Saved Sonar report: sonar-report.json"
-        //     }
-        // }
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
     }
 
     post {
         success {
-            echo "Scan Success for build: ${env.BUILD_NUMBER}"
+            echo "✅ Scan Success for build: ${env.BUILD_NUMBER}"
         }
         failure {
-            echo "Scan Failed for build: ${env.BUILD_NUMBER}"
+            echo "❌ Scan Failed for build: ${env.BUILD_NUMBER}"
         }
     }
 }
+ 
