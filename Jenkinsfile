@@ -33,7 +33,7 @@ pipeline {
                     
                     // Use single project key for all branches
                     def projectKey = BASE_PROJECT_KEY
-                    def projectName = "${BASE_PROJECT_KEY} (Branch: ${branchName})"
+                    def projectName = BASE_PROJECT_KEY
 
                     echo "=========================================="
                     echo "SonarQube Analysis:"
@@ -56,8 +56,8 @@ pipeline {
                     withSonarQubeEnv('SonarQube') {
                         bat """
                         "${scannerHome}\\bin\\sonar-scanner.bat" ^
-                          -Dsonar.projectKey=${projectKey} ^
-                          -Dsonar.projectName=${projectName} ^
+                          -Dsonar.projectKey="${projectKey}" ^
+                          -Dsonar.projectName="${projectName}" ^
                           -Dsonar.sources=java-poc/src/main/java ^
                           -Dsonar.java.binaries=target/classes ^
                           -Dsonar.host.url=${SONAR_HOST}
