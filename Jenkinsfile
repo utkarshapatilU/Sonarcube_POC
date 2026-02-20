@@ -1,23 +1,32 @@
 pipeline {
     agent any
 
+    // tools {
+    //     jdk 'JDK_21' // Use the name of your JDK installation in Global Tool Configuration
+    //     maven 'Maven3' // Use the name of your Maven installation in Global Tool Configuration
+    // }
     environment {
         SONAR_ENV  = "SonarQube" 
-        SONAR_HOST = "http://10.104.224.85:9000"  
+        SONAR_HOST = "http://192.168.0.62:9000"  
         BRANCH_NAME = "${env.BRANCH_NAME}"
+
     }
 
     stages {
-
-        stage('Checkout') {
+        stage('Clone Repository') {
             steps {
-                git branch: 'main',
-                    credentialsId: 'github-token',
-                    url: 'https://github.com/utkarshapatilU/Sonarcube_POC.git'
+                script {
+                    echo "Cloning the repository..."
+                    checkout scmGit(branches: [[name: '*/feature-utkarsha']],extensions: [],userRemoteConfigs: [[credentialsId: 'github-token',  url: 'https://github.com/utkarshapatilU/Sonarcube_POC.git']])
+                }
             }
         }
-
-        stage('Build & Sonar') {
+        // stage('Validate Dependencies') {
+        //     steps {
+        //         sh 'mvn validate'
+        //     }
+        // }
+         stage('Build & Sonar') {
             steps {
                 withMaven(maven: 'Maven 3.9.4') {
                     withSonarQubeEnv('SonarQube') { 
@@ -27,6 +36,12 @@ pipeline {
             }
         }
 
+        // stage('Run Tests and Generate Coverage Report') {
+        //     steps {
+        //         echo "Running tests and generating code coverage report..."
+        //         sh 'mvn test install site -P test'
+        //     }
+        // }
         stage('Sonar Scan (Docker)') {
             steps {
                 withCredentials([string(credentialsId: 'SONAR_AUTH_TOKEN', variable: 'TOKEN')]) {
@@ -40,6 +55,8 @@ pipeline {
                               sonarsource/sonar-scanner-cli \\
                               -Dsonar.projectKey=java-poc-pipeline \\
                               -Dsonar.projectName=java-poc-pipeline \\
+                              -Dsonar.projectKey=java-poc-pipeline \\
+                              -Dsonar.projectName=java-poc-pipeline \\
                               -Dsonar.sources=.
                             """
                         } else {
@@ -51,6 +68,8 @@ pipeline {
                               sonarsource/sonar-scanner-cli ^
                               -Dsonar.projectKey=java-poc-pipeline ^
                               -Dsonar.projectName=java-poc-pipeline ^
+                              -Dsonar.projectKey=java-poc-pipeline ^
+                              -Dsonar.projectName=java-poc-pipeline ^
                               -Dsonar.sources=.
                             """
                         }
@@ -59,7 +78,7 @@ pipeline {
             }
         }
 
-        stage('Quality Gate') {
+ stage('Quality Gate') {
             steps {
                 timeout(time: 2, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
@@ -72,7 +91,7 @@ stage('Send Reports') {
         withCredentials([string(credentialsId: 'SONAR_AUTH_TOKEN', variable: 'SONAR_TOKEN')]) {
             script {
                 def response = bat(
-                    script: """curl -s -u %SONAR_TOKEN%: "http://10.104.224.85:9000/api/measures/component?componentKey=java-poc-pipeline&metricKeys=bugs,vulnerabilities,code_smells" """,
+                    script: """curl -s -u %SONAR_TOKEN%: "http://192.168.0.62:9000/api/measures/component?componentKey=java-poc-pipeline&metricKeys=bugs,vulnerabilities,code_smells" """,
                     returnStdout: true
                 )
                 writeFile file: 'sonar-report.json', text: response
@@ -83,9 +102,21 @@ stage('Send Reports') {
 }
 
 
-    } 
 
-    post {
+
+        // stage('Quality Gate') {
+        //     steps {
+        //         script {
+        //             echo "Waiting for SonarQube Quality Gate..."
+        //             timeout(time: 5, unit: 'MINUTES') {
+        //                 waitForQualityGate abortPipeline: true
+        //             }
+        //         }
+        //     }
+        // }
+    }
+
+     post {
         success {
             echo "Scan Success for build: ${env.BUILD_NUMBER}"
         }
@@ -94,3 +125,5 @@ stage('Send Reports') {
         }
     }
 }
+
+ 
