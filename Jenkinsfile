@@ -55,16 +55,42 @@ pipeline {
             }
         }
 
-        // stage('Quality Gate') {
-        //     steps {
-        //         timeout(time: 5, unit: 'MINUTES') {
-        //             waitForQualityGate abortPipeline: true
-        //         }
-        //     }
-        // }
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    script {
+                        def qg = waitForQualityGate()
+                        echo "Quality Gate status: ${qg.status}"
+                        if (qg.status != 'OK') {
+                            currentBuild.result = 'FAILURE'
+                        }
+                    }
+                }
+            }
+        }
     }
 
     post {
+        always {
+            script {
+                // Last commit author information for this build
+                def authorName = bat(
+                    script: 'git log -1 --pretty=format:%an',
+                    returnStdout: true
+                ).trim()
+
+                def authorEmail = bat(
+                    script: 'git log -1 --pretty=format:%ae',
+                    returnStdout: true
+                ).trim()
+
+                echo "Report user: ${authorName} <${authorEmail}>"
+                echo "Final Quality Gate / Build result: ${currentBuild.currentResult}"
+
+                // Show in Jenkins build header
+                currentBuild.description = "User: ${authorName} | QG: ${currentBuild.currentResult}"
+            }
+        }
         success {
             echo "✅ Scan Success for build: ${env.BUILD_NUMBER}"
         }
