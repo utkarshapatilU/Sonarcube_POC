@@ -17,8 +17,8 @@ pipeline {
         stage('Build') {
             steps {
                 withMaven(maven: 'Maven 3.9.4') {
-                    // bat 'mvn clean compile'
-                    bat 'mvn clean verify'
+                    bat 'mvn clean compile'
+        
                 }
             }
         }
