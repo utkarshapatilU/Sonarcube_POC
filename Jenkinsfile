@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        SONAR_HOST = "http://192.168.0.153:9000"
+        SONAR_HOST = "http://192.168.0.133:9000"
         BASE_PROJECT_KEY = "java-poc-pipeline"
     }
 
